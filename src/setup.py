@@ -8,9 +8,9 @@ if sys.platform == "win32":
     base = "Win32GUI"
 
 setup(
-    name="Gerenciador de Planilhas Financeiras",
-    version="0.1",
-    description="Manipula as Planilhas Financeiras",
+    name="Gerenciador de Planilha Financeira by Euller Julio V1.0.1",
+    version="0.2",
+    description="Gerencia Planilhas Financeiras",
     options={"build_exe": build_exe_options},
     executables=[Executable("App.py", base=base)]
 )

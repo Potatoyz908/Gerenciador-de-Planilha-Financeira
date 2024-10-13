@@ -121,17 +121,25 @@ def adicionar_dados_financeiro_geral(path_arquivo, novo_dado):
     wb = load_workbook(path_arquivo)
     ws = wb['Financeiro Geral']
     
-    for r in dataframe_to_rows(df_novo_dado, index=False, header=False):
-        ws.append(r)
+    try:
+        for r in dataframe_to_rows(df_novo_dado, index=False, header=False):
+            ws.append(r)
 
-    aplicar_estilo_cabecalho(ws)  #Aplica o estilo do cabeçalho na aba 'Financeiro Geral'
-    configurar_formatacao(ws)  #Formata a planilha
+        aplicar_estilo_cabecalho(ws)  #Aplica o estilo do cabeçalho na aba 'Financeiro Geral'
+        configurar_formatacao(ws)  #Formata a planilha
     
     #Salva o arquivo Excel com as alterações
-    wb.save(path_arquivo)
-    
+        wb.save(path_arquivo)
+
     #Atualiza as abas dos centros de custo
-    atualizar_abas_centros(path_arquivo)
+        atualizar_abas_centros(path_arquivo)
+        
+        return True
+    
+    except PermissionError:
+        messagebox.showerror("Erro de Permissão", "A planilha está aberta. Por favor, feche a planilha antes de adicionar novos dados.")
+        return False
+    
 
 def fazer_backup(path_arquivo, max_backups=3):   #Altere aqui o tanto de backups que voce deseja manter
     pasta_backup = "backups"
@@ -170,9 +178,14 @@ def validar_campos(novo_dado):
 
     try:
         if novo_dado['VALOR'] <= 0:
-            erros.append("O campo 'Valor' deve ser um número maior que zero.")
+            erros.append("Valor deve ser maior que zero.")
     except ValueError:
-        erros.append("O campo 'Valor' deve conter um número válido.")
+        erros.append("Valor deve ser um número.")
+    try:
+        if not novo_dado['VALOR']:
+            erros.append("Valor não informado.")
+    except ValueError:
+        erros.append("O campo Valor deve conter um número válido.")
     
     if not novo_dado['FORNECEDOR']:
         erros.append("Fornecedor não informado.")
@@ -188,7 +201,8 @@ def exibir_erro(erros):
 
 def adicionar_dados():
     #Capturar os dados do formulário e convertê-los para caixa alta, exceto o valor
-    novo_dado = {
+    try:
+        novo_dado = {
         'DATA': entry_data.get(),
         'VALOR': float(entry_valor.get()), 
         'FORNECEDOR': combobox_fornecedor.get().upper(),
@@ -196,24 +210,22 @@ def adicionar_dados():
         'CENTRO': combobox_centro.get().upper(),
         'OBSERVAÇÃO': entry_observacao.get().upper(),
         'DADOS': entry_dados.get().upper()
-    }
-
-    try:
+        }
+        
         erros = validar_campos(novo_dado) #valida os dados antes de continuar
         if erros:
             exibir_erro(erros)
             return #finaliza a execucao em caso de erros
+        
+        sucesso=adicionar_dados_financeiro_geral(PATH_ARQUIVO, novo_dado)
 
-        novo_dado['VALOR'] = float(novo_dado['VALOR'])
-
-        adicionar_dados_financeiro_geral(PATH_ARQUIVO, novo_dado)
-        messagebox.showinfo("Sucesso", "Dados adicionados e abas atualizadas com sucesso!")
-        atualizar_opcoes()
-        reiniciar_formulario()  #Reinicia os campos de entrada
-
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Dados adicionados e abas atualizadas com sucesso!")
+            atualizar_opcoes()
+            reiniciar_formulario()  #Reinicia os campos de entrada
+    
     except ValueError:
-        # Erro específico para conversão de valor
-        messagebox.showerror("Erro no preenchimento", "O campo 'Valor' deve conter um número válido.")
+        messagebox.showerror("Erro no preenchimento", "O campo Valor deve conter um número válido.")
         
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
