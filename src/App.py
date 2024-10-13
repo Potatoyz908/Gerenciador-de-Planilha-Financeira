@@ -161,6 +161,30 @@ def atualizar_abas_centros(path_arquivo):
     for centro in centros_custo:
         df_filtrado = filtrar_por_centro(df_geral, centro)
         atualizar_ou_criar_aba(path_arquivo, df_filtrado, centro)
+def validar_campos(novo_dado):
+    erros = []
+
+
+    if not novo_dado['DATA']:
+        erros.append("Data não informada.")
+
+    try:
+        if novo_dado['VALOR'] <= 0:
+            erros.append("O campo 'Valor' deve ser um número maior que zero.")
+    except ValueError:
+        erros.append("O campo 'Valor' deve conter um número válido.")
+    
+    if not novo_dado['FORNECEDOR']:
+        erros.append("Fornecedor não informado.")
+
+    if not novo_dado['CENTRO']:
+        erros.append("Centro de Custo não informado.")
+    
+    return erros
+
+def exibir_erro(erros):
+    mensagem = "\n".join(erros)
+    messagebox.showerror("Erro no preenchimento", f"Corrija os seguintes erros:\n\n{mensagem}")
 
 def adicionar_dados():
     #Capturar os dados do formulário e convertê-los para caixa alta, exceto o valor
@@ -173,11 +197,24 @@ def adicionar_dados():
         'OBSERVAÇÃO': entry_observacao.get().upper(),
         'DADOS': entry_dados.get().upper()
     }
+
     try:
+        erros = validar_campos(novo_dado) #valida os dados antes de continuar
+        if erros:
+            exibir_erro(erros)
+            return #finaliza a execucao em caso de erros
+
+        novo_dado['VALOR'] = float(novo_dado['VALOR'])
+
         adicionar_dados_financeiro_geral(PATH_ARQUIVO, novo_dado)
         messagebox.showinfo("Sucesso", "Dados adicionados e abas atualizadas com sucesso!")
         atualizar_opcoes()
         reiniciar_formulario()  #Reinicia os campos de entrada
+
+    except ValueError:
+        # Erro específico para conversão de valor
+        messagebox.showerror("Erro no preenchimento", "O campo 'Valor' deve conter um número válido.")
+        
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
 
@@ -193,6 +230,8 @@ def formatar_data(event):
     conteudo = entry_data.get()
     if len(conteudo) == 2 or len(conteudo) == 5:
         entry_data.insert(tk.END, '/')  #Insere uma '/' após o mês e o dia
+
+
 
 def reiniciar_formulario():
     #Limpa todos os campos de entrada após a inserção dos dados
