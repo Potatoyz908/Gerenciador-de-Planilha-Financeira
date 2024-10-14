@@ -29,7 +29,7 @@ O **Gerenciador de Planilha Financeira** é uma aplicação desenvolvida em Pyth
 2. **Executar a Aplicação: Execute o script Python da aplicação. O usuário será solicitado a selecionar uma planilha Excel para carregar**:
    
    ```bash
-   python gerenciador_planilha_financeira.py
+   python App.py
 3. **Adicionar Dados: Preencha os campos do formulário e clique em "Adicionar Dados" para salvar as informações na planilha. A aplicação irá validar os dados e notificar se houver erros.**
    
 4. **Finalizar a Aplicação: Você pode finalizar a aplicação clicando no botão "Finalizar".**
