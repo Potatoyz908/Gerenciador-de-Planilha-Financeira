@@ -89,5 +89,5 @@ Agora use o comando para executar o aplicativo:**
 
 ### Imagens de funcionamento do programa:
 
-  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura1.png)  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura2.png)  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura3.png)
+  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura1.png)  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura2.png)  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura3.png)  ![](https://github.com/Potatoyz908/Gerenciador-de-Planilha-Financeira/blob/main/imgs/Captura4.png)
  
