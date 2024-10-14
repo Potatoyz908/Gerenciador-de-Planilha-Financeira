@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, PatternFill
@@ -10,7 +11,8 @@ from tkinter import messagebox, filedialog, ttk
 from tkcalendar import DateEntry
 
 
-
+class CancelamentoSelecao(Exception):
+    pass
 def selecionar_arquivo():
     caminho_arquivo = filedialog.askopenfilename(
         title="Selecione a Planilha",
@@ -19,11 +21,19 @@ def selecionar_arquivo():
     if caminho_arquivo:
         return caminho_arquivo
     else:
-        raise FileNotFoundError("Nenhum arquivo selecionado.")
+        raise CancelamentoSelecao()
+def finalizar():
+    sys.exit()
 
+root = tk.Tk()
+root.withdraw()
+
+try:
 # Uso
-PATH_ARQUIVO = selecionar_arquivo()
+    PATH_ARQUIVO = selecionar_arquivo()
 
+except CancelamentoSelecao:
+    finalizar()
 
 def configurar_formatacao(ws):
     alinhar = Alignment(horizontal='center', vertical='center')
@@ -284,7 +294,8 @@ def configurar_interface():
 def finalizar_aplicacao():
     resposta = messagebox.askyesno("Finalizar", "Você tem certeza que deseja finalizar a aplicação?")
     if resposta:
-        root.destroy()  # Fecha a janela principal
+        root.destroy()#Fecha a janela principal
+        sys.exit()
 
 def centralizar_janela():
     largura_janela = 350  
