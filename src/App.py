@@ -75,7 +75,11 @@ def copiar_cabecalho(ws_origem, ws_destino):
 
 def carregar_planilha(path_arquivo, sheet_name='Financeiro Geral'):
     if os.path.exists(path_arquivo):
-        return pd.read_excel(path_arquivo, sheet_name=sheet_name)
+        df = pd.read_excel(path_arquivo, sheet_name=sheet_name)
+        df['VALOR'] = pd.to_numeric(df['VALOR'], errors='coerce')
+        df['DATA'] = pd.to_datetime(df['DATA'], errors='coerce')
+        return df
+    
     else:
         raise FileNotFoundError(f"Arquivo {path_arquivo} não encontrado.")
 
@@ -121,6 +125,13 @@ def atualizar_ou_criar_aba(path_arquivo, df_filtrado, centro):
     #Salvar o arquivo Excel com as alterações
     wb.save(path_arquivo)
 
+def obter_ultima_linha_vazia(ws):
+    #Obter a última linha vazia da aba.
+    for row in range(2, ws.max_row + 1):
+        if all(cell.value is None for cell in ws[row]):
+            return row
+    return ws.max_row + 1
+
 def adicionar_dados_financeiro_geral(path_arquivo, novo_dado):
     fazer_backup(path_arquivo)
     df = carregar_planilha(path_arquivo)
@@ -132,8 +143,16 @@ def adicionar_dados_financeiro_geral(path_arquivo, novo_dado):
     ws = wb['Financeiro Geral']
     
     try:
-        for r in dataframe_to_rows(df_novo_dado, index=False, header=False):
-            ws.append(r)
+        #Encontra a primeira linha vazia
+        ultima_vazia=obter_ultima_linha_vazia(ws)
+
+        for i, row in enumerate(dataframe_to_rows(df_novo_dado, index=False, header=False), start=ultima_vazia):
+            for j, value in enumerate(row, start=1):
+                # Verifica se o valor é um número e converte para string se necessário
+                if isinstance(value, (float, int)):
+                    ws.cell(row=i, column=j, value=value)  # Mantém como número
+                else:
+                    ws.cell(row=i, column=j, value=str(value) if value is not None else None)
 
         aplicar_estilo_cabecalho(ws)  #Aplica o estilo do cabeçalho na aba 'Financeiro Geral'
         configurar_formatacao(ws)  #Formata a planilha
@@ -186,16 +205,11 @@ def validar_campos(novo_dado):
     if not novo_dado['DATA']:
         erros.append("Data não informada.")
 
-    try:
-        if novo_dado['VALOR'] <= 0:
-            erros.append("Valor deve ser maior que zero.")
-    except ValueError:
-        erros.append("Valor deve ser um número.")
-    try:
-        if not novo_dado['VALOR']:
-            erros.append("Valor não informado.")
-    except ValueError:
-        erros.append("O campo Valor deve conter um número válido.")
+    if novo_dado['VALOR'] is None or novo_dado['VALOR'] <= 0:
+        erros.append("Valor deve ser maior que zero.")
+    
+    if novo_dado['VALOR'] == '':
+        erros.append("Valor não informado.")
     
     if not novo_dado['FORNECEDOR']:
         erros.append("Fornecedor não informado.")
@@ -209,19 +223,34 @@ def exibir_erro(erros):
     mensagem = "\n".join(erros)
     messagebox.showerror("Erro no preenchimento", f"Corrija os seguintes erros:\n\n{mensagem}")
 
+def converter_valor(valor_texto):
+    """Converte o texto do valor em float, aceitando formatos diferentes."""
+    try:
+        # Remover espaços em branco e converter para float
+        valor_numero = float(valor_texto)
+        return valor_numero
+    except ValueError:
+        return None  # Retorna None se a conversão falhar
+
 def adicionar_dados():
     #Capturar os dados do formulário e convertê-los para caixa alta, exceto o valor
     try:
-        novo_dado = {
+        valor_texto = entry_valor.get().strip()
+        if valor_texto:
+            valor = converter_valor(valor_texto)
+            if valor is None:
+                raise ValueError("O campo Valor deve conter um número válido.")
+            
+            novo_dado = {
         'DATA': entry_data.get(),
-        'VALOR': float(entry_valor.get()), 
+        'VALOR': valor, 
         'FORNECEDOR': combobox_fornecedor.get().upper(),
         'DESCRIÇÃO': entry_descricao.get().upper(),
         'CENTRO': combobox_centro.get().upper(),
         'OBSERVAÇÃO': entry_observacao.get().upper(),
         'DADOS': entry_dados.get().upper()
         }
-        
+            
         erros = validar_campos(novo_dado) #valida os dados antes de continuar
         if erros:
             exibir_erro(erros)
