@@ -1,4 +1,5 @@
 import os
+import sys
 import pandas as pd
 from openpyxl import load_workbook
 from openpyxl.styles import Alignment, PatternFill
@@ -10,7 +11,8 @@ from tkinter import messagebox, filedialog, ttk
 from tkcalendar import DateEntry
 
 
-
+class CancelamentoSelecao(Exception):
+    pass
 def selecionar_arquivo():
     caminho_arquivo = filedialog.askopenfilename(
         title="Selecione a Planilha",
@@ -19,11 +21,19 @@ def selecionar_arquivo():
     if caminho_arquivo:
         return caminho_arquivo
     else:
-        raise FileNotFoundError("Nenhum arquivo selecionado.")
+        raise CancelamentoSelecao()
+def finalizar():
+    sys.exit()
 
+root = tk.Tk()
+root.withdraw()
+
+try:
 # Uso
-PATH_ARQUIVO = selecionar_arquivo()
+    PATH_ARQUIVO = selecionar_arquivo()
 
+except CancelamentoSelecao:
+    finalizar()
 
 def configurar_formatacao(ws):
     alinhar = Alignment(horizontal='center', vertical='center')
@@ -65,7 +75,11 @@ def copiar_cabecalho(ws_origem, ws_destino):
 
 def carregar_planilha(path_arquivo, sheet_name='Financeiro Geral'):
     if os.path.exists(path_arquivo):
-        return pd.read_excel(path_arquivo, sheet_name=sheet_name)
+        df = pd.read_excel(path_arquivo, sheet_name=sheet_name)
+        df['VALOR'] = pd.to_numeric(df['VALOR'], errors='coerce')
+        df['DATA'] = pd.to_datetime(df['DATA'], errors='coerce')
+        return df
+    
     else:
         raise FileNotFoundError(f"Arquivo {path_arquivo} não encontrado.")
 
@@ -111,6 +125,13 @@ def atualizar_ou_criar_aba(path_arquivo, df_filtrado, centro):
     #Salvar o arquivo Excel com as alterações
     wb.save(path_arquivo)
 
+def obter_ultima_linha_vazia(ws):
+    #Obter a última linha vazia da aba.
+    for row in range(2, ws.max_row + 1):
+        if all(cell.value is None for cell in ws[row]):
+            return row
+    return ws.max_row + 1
+
 def adicionar_dados_financeiro_geral(path_arquivo, novo_dado):
     fazer_backup(path_arquivo)
     df = carregar_planilha(path_arquivo)
@@ -121,17 +142,33 @@ def adicionar_dados_financeiro_geral(path_arquivo, novo_dado):
     wb = load_workbook(path_arquivo)
     ws = wb['Financeiro Geral']
     
-    for r in dataframe_to_rows(df_novo_dado, index=False, header=False):
-        ws.append(r)
+    try:
+        #Encontra a primeira linha vazia
+        ultima_vazia=obter_ultima_linha_vazia(ws)
 
-    aplicar_estilo_cabecalho(ws)  #Aplica o estilo do cabeçalho na aba 'Financeiro Geral'
-    configurar_formatacao(ws)  #Formata a planilha
+        for i, row in enumerate(dataframe_to_rows(df_novo_dado, index=False, header=False), start=ultima_vazia):
+            for j, value in enumerate(row, start=1):
+                # Verifica se o valor é um número e converte para string se necessário
+                if isinstance(value, (float, int)):
+                    ws.cell(row=i, column=j, value=value)  # Mantém como número
+                else:
+                    ws.cell(row=i, column=j, value=str(value) if value is not None else None)
+
+        aplicar_estilo_cabecalho(ws)  #Aplica o estilo do cabeçalho na aba 'Financeiro Geral'
+        configurar_formatacao(ws)  #Formata a planilha
     
     #Salva o arquivo Excel com as alterações
-    wb.save(path_arquivo)
-    
+        wb.save(path_arquivo)
+
     #Atualiza as abas dos centros de custo
-    atualizar_abas_centros(path_arquivo)
+        atualizar_abas_centros(path_arquivo)
+        
+        return True
+    
+    except PermissionError:
+        messagebox.showerror("Erro de Permissão", "A planilha está aberta. Por favor, feche a planilha antes de adicionar novos dados.")
+        return False
+    
 
 def fazer_backup(path_arquivo, max_backups=3):   #Altere aqui o tanto de backups que voce deseja manter
     pasta_backup = "backups"
@@ -161,23 +198,74 @@ def atualizar_abas_centros(path_arquivo):
     for centro in centros_custo:
         df_filtrado = filtrar_por_centro(df_geral, centro)
         atualizar_ou_criar_aba(path_arquivo, df_filtrado, centro)
+def validar_campos(novo_dado):
+    erros = []
+
+
+    if not novo_dado['DATA']:
+        erros.append("Data não informada.")
+
+    if novo_dado['VALOR'] is None or novo_dado['VALOR'] <= 0:
+        erros.append("Valor deve ser maior que zero.")
+    
+    if novo_dado['VALOR'] == '':
+        erros.append("Valor não informado.")
+    
+    if not novo_dado['FORNECEDOR']:
+        erros.append("Fornecedor não informado.")
+
+    if not novo_dado['CENTRO']:
+        erros.append("Centro de Custo não informado.")
+    
+    return erros
+
+def exibir_erro(erros):
+    mensagem = "\n".join(erros)
+    messagebox.showerror("Erro no preenchimento", f"Corrija os seguintes erros:\n\n{mensagem}")
+
+def converter_valor(valor_texto):
+    """Converte o texto do valor em float, aceitando formatos diferentes."""
+    try:
+        # Remover espaços em branco e converter para float
+        valor_numero = float(valor_texto)
+        return valor_numero
+    except ValueError:
+        return None  # Retorna None se a conversão falhar
 
 def adicionar_dados():
     #Capturar os dados do formulário e convertê-los para caixa alta, exceto o valor
-    novo_dado = {
+    try:
+        valor_texto = entry_valor.get().strip()
+        if valor_texto:
+            valor = converter_valor(valor_texto)
+            if valor is None:
+                raise ValueError("O campo Valor deve conter um número válido.")
+            
+            novo_dado = {
         'DATA': entry_data.get(),
-        'VALOR': float(entry_valor.get()), 
+        'VALOR': valor, 
         'FORNECEDOR': combobox_fornecedor.get().upper(),
-        'DESCRIÇÃO': entry_descricao.get().upper(),
+        'DESCRIÇÃO': combobox_descricao.get().upper(),
         'CENTRO': combobox_centro.get().upper(),
         'OBSERVAÇÃO': entry_observacao.get().upper(),
         'DADOS': entry_dados.get().upper()
-    }
-    try:
-        adicionar_dados_financeiro_geral(PATH_ARQUIVO, novo_dado)
-        messagebox.showinfo("Sucesso", "Dados adicionados e abas atualizadas com sucesso!")
-        atualizar_opcoes()
-        reiniciar_formulario()  #Reinicia os campos de entrada
+        }
+            
+        erros = validar_campos(novo_dado) #valida os dados antes de continuar
+        if erros:
+            exibir_erro(erros)
+            return #finaliza a execucao em caso de erros
+        
+        sucesso=adicionar_dados_financeiro_geral(PATH_ARQUIVO, novo_dado)
+
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Dados adicionados e abas atualizadas com sucesso!")
+            atualizar_opcoes()
+            reiniciar_formulario()  #Reinicia os campos de entrada
+    
+    except ValueError:
+        messagebox.showerror("Erro no preenchimento", "O campo Valor deve conter um número válido.")
+        
     except Exception as e:
         messagebox.showerror("Erro", f"Ocorreu um erro: {e}")
 
@@ -194,12 +282,14 @@ def formatar_data(event):
     if len(conteudo) == 2 or len(conteudo) == 5:
         entry_data.insert(tk.END, '/')  #Insere uma '/' após o mês e o dia
 
+
+
 def reiniciar_formulario():
     #Limpa todos os campos de entrada após a inserção dos dados
     entry_data.delete(0, tk.END)
     entry_valor.delete(0, tk.END)
     combobox_fornecedor.delete(0, tk.END)
-    entry_descricao.delete(0, tk.END)
+    combobox_descricao.delete(0, tk.END)
     combobox_centro.delete(0, tk.END)
     entry_observacao.delete(0, tk.END)
     entry_dados.delete(0, tk.END)
@@ -233,7 +323,8 @@ def configurar_interface():
 def finalizar_aplicacao():
     resposta = messagebox.askyesno("Finalizar", "Você tem certeza que deseja finalizar a aplicação?")
     if resposta:
-        root.destroy()  # Fecha a janela principal
+        root.destroy()#Fecha a janela principal
+        sys.exit()
 
 def centralizar_janela():
     largura_janela = 350  
@@ -280,9 +371,12 @@ combobox_fornecedor.grid(row=2, column=1)
 combobox_fornecedor['values'] = fornecedores
 combobox_fornecedor.bind("<KeyRelease>", lambda event: combobox_autocomplete(event, combobox_fornecedor, fornecedores))
 
-tk.Label(root, text="Descrição:", font=font_label, bg='#f2f2f2').grid(row=3, column=0, sticky="e")
-entry_descricao = tk.Entry(root, font=font_entry)
-entry_descricao.grid(row=3, column=1)
+descricoes = ['Entrada', 'Saída']
+
+tk.Label(root, text="Descrição", font=font_label, bg='#f2f2f2').grid(row=3, column=0, sticky="e")
+combobox_descricao = ttk.Combobox(root, font=font_entry)
+combobox_descricao.grid(row=3, column=1)
+combobox_descricao['values'] = descricoes #Adiciona as opções
 
 tk.Label(root, text="Centro de Custo:", font=font_label, bg='#f2f2f2').grid(row=4, column=0, sticky="e")
 combobox_centro = ttk.Combobox(root, font=font_label)
