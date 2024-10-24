@@ -245,7 +245,7 @@ def adicionar_dados():
         'DATA': entry_data.get(),
         'VALOR': valor, 
         'FORNECEDOR': combobox_fornecedor.get().upper(),
-        'DESCRIÇÃO': entry_descricao.get().upper(),
+        'DESCRIÇÃO': combobox_descricao.get().upper(),
         'CENTRO': combobox_centro.get().upper(),
         'OBSERVAÇÃO': entry_observacao.get().upper(),
         'DADOS': entry_dados.get().upper()
@@ -289,7 +289,7 @@ def reiniciar_formulario():
     entry_data.delete(0, tk.END)
     entry_valor.delete(0, tk.END)
     combobox_fornecedor.delete(0, tk.END)
-    entry_descricao.delete(0, tk.END)
+    combobox_descricao.delete(0, tk.END)
     combobox_centro.delete(0, tk.END)
     entry_observacao.delete(0, tk.END)
     entry_dados.delete(0, tk.END)
@@ -371,9 +371,12 @@ combobox_fornecedor.grid(row=2, column=1)
 combobox_fornecedor['values'] = fornecedores
 combobox_fornecedor.bind("<KeyRelease>", lambda event: combobox_autocomplete(event, combobox_fornecedor, fornecedores))
 
-tk.Label(root, text="Descrição:", font=font_label, bg='#f2f2f2').grid(row=3, column=0, sticky="e")
-entry_descricao = tk.Entry(root, font=font_entry)
-entry_descricao.grid(row=3, column=1)
+descricoes = ['Entrada', 'Saída']
+
+tk.Label(root, text="Descrição", font=font_label, bg='#f2f2f2').grid(row=3, column=0, sticky="e")
+combobox_descricao = ttk.Combobox(root, font=font_entry)
+combobox_descricao.grid(row=3, column=1)
+combobox_descricao['values'] = descricoes #Adiciona as opções
 
 tk.Label(root, text="Centro de Custo:", font=font_label, bg='#f2f2f2').grid(row=4, column=0, sticky="e")
 combobox_centro = ttk.Combobox(root, font=font_label)

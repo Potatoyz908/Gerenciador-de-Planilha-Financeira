@@ -1,0 +1,23 @@
+# Licença do Aplicativo
+
+- Copyright © 2023-2024, Euller Júlio.
+
+## Descrição do Aplicativo
+
+Este aplicativo é um gerenciador financeiro desenvolvido para facilitar a organização e o controle de dados financeiros. Ele permite a inserção e o armazenamento de informações financeiras, como datas, valores, fornecedores e descrições, em uma planilha Excel. O aplicativo automatiza o processo de criação de abas para diferentes centros de custo, permitindo uma visualização mais clara e organizada dos dados financeiros.
+
+## Créditos
+
+Este aplicativo foi desenvolvido por Euller Júlio, um estudante da Universidade de Brasília (UnB). Através deste projeto, Euller Júlio visa aplicar conhecimentos adquiridos durante sua formação em engenharia de software, além de contribuir para a melhoria da gestão financeira.
+
+## Termos de Uso
+
+Este software é fornecido "como está", sem garantia de qualquer tipo, expressa ou implícita, incluindo, mas não se limitando a, garantias de comercialização ou adequação a um propósito específico. Em nenhuma circunstância o autor ou os colaboradores serão responsáveis por qualquer dano direto, indireto, incidental, especial, exemplar ou consequente resultante de qualquer uso do software.
+
+Para mais informações ou solicitações, entre em contato com Euller Júlio através do email [euller2005@gmail.com] ou via whatsapp (61)99113-1654.
+Outras formas de contato:
+
+GitHub: https://github.com/Potatoyz908
+LinkedIn: https://www.linkedin.com/in/euller-júlio-002572287/
+
+Obrigado.
